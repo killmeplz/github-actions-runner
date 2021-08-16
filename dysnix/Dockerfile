@@ -48,12 +48,10 @@ ARG VIRTUAL_ENV_INSTALLS="basic python nodejs"
 RUN \
     . /usr/local/bin/install-from-virtual-env-helpers && \
     ( [ -z "$VIRTUAL_ENV_PACKAGES" ] || apt-get -y update && apt-get -y --no-install-recommends install $VIRTUAL_ENV_PACKAGES ) && \
-    ( \
-      [ -z "$VIRTUAL_ENV_INSTALLS" ] || \
+    ( [ -z "$VIRTUAL_ENV_INSTALLS" ] || \
         for package in ${VIRTUAL_ENV_INSTALLS}; do \
             install-from-virtual-env $package;  \
-        done && \
-    ) && \
+        done ) && \
     apt-get -y clean && \
     rm -rf /virtual-environments /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -82,11 +80,9 @@ ONBUILD ARG VIRTUAL_ENV_INSTALLS
 ONBUILD RUN \
     . /usr/local/bin/install-from-virtual-env-helpers && \
     ( [ -z "$VIRTUAL_ENV_PACKAGES" ] || apt-get -y update && apt-get -y --no-install-recommends install $VIRTUAL_ENV_PACKAGES ) && \
-    ( \
-      [ -z "$VIRTUAL_ENV_INSTALLS" ] || \
+    ( [ -z "$VIRTUAL_ENV_INSTALLS" ] || \
         for package in ${VIRTUAL_ENV_INSTALLS}; do \
             install-from-virtual-env $package;  \
-        done && \
-    ) && \
+        done ) && \
     apt-get -y clean && \
     rm -rf /virtual-environments /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
