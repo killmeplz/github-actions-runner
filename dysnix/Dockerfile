@@ -1,6 +1,6 @@
-FROM quay.io/evryfs/base-ubuntu:focal-20210609
+FROM quay.io/evryfs/base-ubuntu:focal-20210723
 
-ARG RUNNER_VERSION=2.278.0
+ARG RUNNER_VERSION=2.280.2
 
 # This the release tag of virtual-environments: https://github.com/actions/virtual-environments/releases
 ARG UBUNTU_VERSION=2004
@@ -40,9 +40,7 @@ RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
     rm -rf /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Copy scripts.
-COPY  scripts/install-from-virtual-env scripts/install-from-virtual-env-helpers \
-      /usr/local/bin/
-COPY entrypoint.sh /
+COPY scripts/ /usr/local/bin/
 
 # Install the default virtual environments and packages
 ARG VIRTUAL_ENV_PACKAGES=""
@@ -55,9 +53,9 @@ RUN \
         for package in ${VIRTUAL_ENV_INSTALLS}; do \
             install-from-virtual-env $package;  \
         done && \
-      apt-get -y clean && \
-      rm -rf /virtual-environments /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-    )
+    ) && \
+    apt-get -y clean && \
+    rm -rf /virtual-environments /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install runner and its dependencies.
 RUN useradd -u 1001 -Um -d /home/runner runner && \
@@ -75,6 +73,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 WORKDIR /home/runner
+COPY entrypoint.sh /
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/sbin/gosu", "runner", "/entrypoint.sh"]
 
 # Onbuild packages and additional virtual environments installation
@@ -88,6 +87,6 @@ ONBUILD RUN \
         for package in ${VIRTUAL_ENV_INSTALLS}; do \
             install-from-virtual-env $package;  \
         done && \
-      apt-get -y clean && \
-      rm -rf /virtual-environments /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-    )
+    ) && \
+    apt-get -y clean && \
+    rm -rf /virtual-environments /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
