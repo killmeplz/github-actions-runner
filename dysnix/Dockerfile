@@ -45,7 +45,8 @@ COPY scripts/ /usr/local/bin/
 # Install the default virtual environments and packages
 ARG VIRTUAL_ENV_PACKAGES=""
 ARG VIRTUAL_ENV_INSTALLS="basic python nodejs"
-RUN . /usr/local/bin/install-from-virtual-env-helpers && \
+RUN \
+    . /usr/local/bin/install-from-virtual-env-helpers && \
     ( [ -z "$VIRTUAL_ENV_PACKAGES" ] || apt-get -y update && apt-get -y --no-install-recommends install $VIRTUAL_ENV_PACKAGES ) && \
     ( \
       [ -z "$VIRTUAL_ENV_INSTALLS" ] || \
@@ -78,7 +79,8 @@ ENTRYPOINT ["/usr/bin/tini", "--", "/usr/sbin/gosu", "runner", "/entrypoint.sh"]
 # Onbuild packages and additional virtual environments installation
 ONBUILD ARG VIRTUAL_ENV_PACKAGES
 ONBUILD ARG VIRTUAL_ENV_INSTALLS
-ONBUILD RUN . /usr/local/bin/install-from-virtual-env-helpers && \
+ONBUILD RUN \
+    . /usr/local/bin/install-from-virtual-env-helpers && \
     ( [ -z "$VIRTUAL_ENV_PACKAGES" ] || apt-get -y update && apt-get -y --no-install-recommends install $VIRTUAL_ENV_PACKAGES ) && \
     ( \
       [ -z "$VIRTUAL_ENV_INSTALLS" ] || \
