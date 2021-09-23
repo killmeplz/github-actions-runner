@@ -1,10 +1,8 @@
-FROM quay.io/evryfs/base-ubuntu:focal-20210723
-
-ARG RUNNER_VERSION=2.280.2
+FROM quay.io/evryfs/base-ubuntu:focal-20210827
 
 # This the release tag of virtual-environments: https://github.com/actions/virtual-environments/releases
 ARG UBUNTU_VERSION=2004
-ARG VIRTUAL_ENVIRONMENT_VERSION=ubuntu20/20210810.1
+ARG VIRTUAL_ENVIRONMENT_VERSION=ubuntu20/20210919.1
 
 ENV UBUNTU_VERSION=${UBUNTU_VERSION} VIRTUAL_ENVIRONMENT_VERSION=${VIRTUAL_ENVIRONMENT_VERSION}
 
@@ -25,16 +23,20 @@ RUN apt-get update && \
     apt-get -y clean && \
     rm -rf /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Add sudo rule for runner user
+RUN echo "runner ALL= EXEC: NOPASSWD:ALL" >> /etc/sudoers.d/runner
+
 # Update git.
 RUN add-apt-repository -y ppa:git-core/ppa && \
     apt-get update && \
-    apt-get -y install --no-install-recommends git=1:2.32.* && \
+    apt-get -y install --no-install-recommends git=1:2.33.* && \
     apt-get -y clean && \
     rm -rf /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install docker cli.
-RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
-    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" && \
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg > /etc/apt/trusted.gpg.d/docker.asc && \
+    echo "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list && \
+    apt-get update && \
     apt-get install -y --no-install-recommends docker-ce-cli=5:20.10.* && \
     apt-get -y clean && \
     rm -rf /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -56,14 +58,8 @@ RUN apt-get -y update && \
     rm -rf /virtual-environments /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install runner and its dependencies.
-RUN useradd -mr -d /home/runner runner && \
-    curl -sL "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" | tar xzvC /home/runner && \
-    /home/runner/bin/installdependencies.sh && \
-    apt-get -y clean && \
-    rm -rf /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Add sudo rule for runner user
-RUN echo "runner ALL= EXEC: NOPASSWD:ALL" >> /etc/sudoers.d/runner
+RUN groupadd -g 121 runner && useradd -mr -d /home/runner -u 1001 -g 121 runner && \
+    install-runner
 
 COPY entrypoint.sh /
 WORKDIR /home/runner

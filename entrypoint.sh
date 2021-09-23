@@ -16,7 +16,11 @@ else
   readonly RUNNER_URL="${_GH_API_ENDPOINT}/${GH_ORG}/${GH_REPO}"
 fi
 
-# Previously --replace doesn't seem to work
-./config.sh remove --token "${RUNNER_TOKEN}"
-./config.sh --unattended --url "${RUNNER_URL}" --token "${RUNNER_TOKEN}"
+sudo install-runner
+
+# # Try upstream
+# ./config.sh remove --token "${RUNNER_TOKEN}"
+# ./config.sh --unattended --url "${RUNNER_URL}" --token "${RUNNER_TOKEN}"
+
+./config.sh --unattended --replace --url "${RUNNER_URL}" --token "${RUNNER_TOKEN}"
 exec "./run.sh" "${RUNNER_ARGS}"
