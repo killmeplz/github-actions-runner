@@ -1,10 +1,8 @@
-FROM quay.io/evryfs/base-ubuntu:focal-20210827
-
-ARG RUNNER_VERSION=2.283.1
+FROM quay.io/evryfs/base-ubuntu:focal-20211006
 
 # This the release tag of virtual-environments: https://github.com/actions/virtual-environments/releases
 ARG UBUNTU_VERSION=2004
-ARG VIRTUAL_ENVIRONMENT_VERSION=ubuntu20/20210919.1
+ARG VIRTUAL_ENVIRONMENT_VERSION=ubuntu20/20211101.1
 
 ENV UBUNTU_VERSION=${UBUNTU_VERSION} VIRTUAL_ENVIRONMENT_VERSION=${VIRTUAL_ENVIRONMENT_VERSION}
 
@@ -21,9 +19,13 @@ RUN apt-get update && \
     make=4.*\
     rsync \
     wget \
-    jq=1.* && \
+    jq=1.* \
+    amazon-ecr-credential-helper=0.3.* && \
     apt-get -y clean && \
     rm -rf /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Add sudo rule for runner user
+RUN echo "runner ALL= EXEC: NOPASSWD:ALL" >> /etc/sudoers.d/runner
 
 # Update git.
 RUN add-apt-repository -y ppa:git-core/ppa && \
@@ -57,11 +59,9 @@ RUN \
     rm -rf /virtual-environments /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install runner and its dependencies.
-RUN useradd -u 1001 -Um -d /home/runner runner && \
-    curl -sL "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" | sudo -u runner tar xzvC /home/runner && \
-    /home/runner/bin/installdependencies.sh && \
-    # make the runner user a passwordless sudoer \
-    echo "runner ALL= EXEC: NOPASSWD:ALL" >> /etc/sudoers.d/runner && chmod 440 /etc/sudoers.d/runner && \
+RUN useradd -u 1001 -Um -d /home/runner runner && install-runner && \
+    # fix permissions \
+    chmod 440 /etc/sudoers.d/runner && \
     apt-get -y clean && \
     rm -rf /var/cache/apt /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
