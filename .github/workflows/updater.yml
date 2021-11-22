@@ -1,35 +1,60 @@
 name: Check Virtualenv
 on:
-  # schedule:
-  #   - cron: "0 0 * * *"
-  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+  #workflow_dispatch:
 
 jobs:
-  check-for-updates:
+  publish:
+    name: Publish new tag
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v2.4.0
 
-    - name: Check for updates
-      id: update
-      run: |
-        version=$(curl --silent https://api.github.com/repos/actions/virtual-environments/releases | \
-          jq -r 'map(select(.tag_name|startswith("ubuntu20"))|.tag_name)[0]')
-
-        echo ::set-output name=version::$version
-        if [[ "${version}a" = ubuntu20/*a ]];then
-          sed -i -r "s|^(ARG VIRTUAL_ENVIRONMENT_VERSION)\s*=.*|\1=$version|" Dockerfile
-        fi
-
-    - name: Create PR
-      uses: peter-evans/create-pull-request@v3
+    - uses: dysnix/find-latest-tag@v1
+      id: upstream
       with:
-        branch: "virtualenv/bump-${{ steps.update.outputs.version }}"
-        title: "Bump virtualenv to ${{ steps.update.outputs.version }}"
-        commit-message: "Bump virtualenv to ${{ steps.update.outputs.version }}"
-        labels: |
-          dependencies
-        team-reviewers: |
-          owners
-          maintainers
-        draft: False
+        regex: v2\.[0-9]+\.[0-9]+$
+        repository: actions/runner
+
+    - uses: dysnix/find-latest-tag@v1
+      id: latest
+      with:
+        compared-to-tag: ${{ steps.upstream.outputs.tag }}
+        regex: v2\.[0-9]+\.[0-9]+$
+        repository: ${{ github.repository }}
+
+    - name: Publish new release
+      uses: ncipollo/release-action@v1
+      if: steps.latest.outputs.newer == 'true' || steps.latest.outputs.tag == ''
+      with:
+        body: |
+          new upstream release ${{ steps.upstream.outputs.tag }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ steps.upstream.outputs.tag }}
+        commit: master
+
+    # - name: Check for updates
+    #   id: update
+    #   run: |
+    #     version=$(curl --silent https://api.github.com/repos/actions/virtual-environments/releases | \
+    #       jq -r 'map(select(.tag_name|startswith("ubuntu20"))|.tag_name)[0]')
+    #
+    #     echo ::set-output name=version::$version
+    #     if [[ "${version}a" = ubuntu20/*a ]];then
+    #       sed -i -r "s|^(ARG VIRTUAL_ENVIRONMENT_VERSION)\s*=.*|\1=$version|" Dockerfile
+    #     fi
+    #
+    # - name: Create PR
+    #   uses: peter-evans/create-pull-request@v3
+    #   with:
+    #     branch: "virtualenv/bump-${{ steps.update.outputs.version }}"
+    #     title: "Bump virtualenv to ${{ steps.update.outputs.version }}"
+    #     commit-message: "Bump virtualenv to ${{ steps.update.outputs.version }}"
+    #     labels: |
+    #       dependencies
+    #     team-reviewers: |
+    #       owners
+    #       maintainers
+    #     draft: False
