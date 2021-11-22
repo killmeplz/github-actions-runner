@@ -22,7 +22,7 @@ jobs:
       id: latest
       with:
         compared-to-tag: ${{ steps.upstream.outputs.tag }}
-        regex: ${{ matrix.versionRegex }}
+        regex: v2\.[0-9]+\.[0-9]+$
         repository: ${{ github.repository }}
 
     - name: Publish new release
